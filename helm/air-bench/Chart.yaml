@@ -1,0 +1,12 @@
+apiVersion: v2
+name: air-bench-2024
+description: One-click deployment of AIR-BENCH-2024 safety benchmark with vLLM inference server
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - benchmark
+  - safety
+  - llm
+  - vllm
+  - air-bench

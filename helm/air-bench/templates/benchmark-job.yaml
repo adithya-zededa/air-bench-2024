@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "air-bench.benchmark.fullname" . }}
+  labels:
+    {{- include "air-bench.labels" . | nindent 4 }}
+    app.kubernetes.io/component: benchmark
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: benchmark
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        # Wait for vLLM to be ready before starting the benchmark
+        - name: wait-for-vllm
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for vLLM server to be ready..."
+              until curl -sf http://{{ include "air-bench.vllm.fullname" . }}:{{ .Values.vllm.service.port }}/health; do
+                echo "vLLM not ready yet, retrying in 10s..."
+                sleep 10
+              done
+              echo "vLLM is ready!"
+      containers:
+        - name: benchmark
+          image: "{{ .Values.benchmark.image.repository }}:{{ .Values.benchmark.image.tag }}"
+          imagePullPolicy: {{ .Values.benchmark.image.pullPolicy }}
+          args:
+            - --vllm-base-url
+            - "http://{{ include "air-bench.vllm.fullname" . }}:{{ .Values.vllm.service.port }}/v1"
+            - --vllm-model
+            - {{ .Values.vllm.model | quote }}
+            - --judge-model
+            - {{ .Values.benchmark.judgeModel | quote }}
+            - --sample-num
+            - {{ .Values.benchmark.sampleNum | quote }}
+            - --region
+            - {{ .Values.benchmark.region | quote }}
+            - --seed
+            - {{ .Values.benchmark.seed | quote }}
+            - --system-prompt
+            - {{ .Values.benchmark.systemPrompt | quote }}
+            - --output-dir
+            - /app/results
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "air-bench.benchmark.fullname" . }}-secrets
+                  key: ANTHROPIC_API_KEY
+          volumeMounts:
+            {{- if .Values.benchmark.results.enabled }}
+            - name: results
+              mountPath: /app/results
+            {{- end }}
+      volumes:
+        {{- if .Values.benchmark.results.enabled }}
+        - name: results
+          persistentVolumeClaim:
+            claimName: {{ include "air-bench.benchmark.fullname" . }}-results
+        {{- end }}

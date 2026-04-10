@@ -1,0 +1,16 @@
+AIR-BENCH-2024 has been deployed!
+
+Components:
+  - vLLM server: {{ .Values.vllm.model }}
+  - Benchmark judge: {{ .Values.benchmark.judgeModel }} (Anthropic)
+
+The benchmark job will start automatically once vLLM is ready.
+
+To check vLLM status:
+  kubectl get pods -l app.kubernetes.io/component=vllm,app.kubernetes.io/instance={{ .Release.Name }}
+
+To check benchmark progress:
+  kubectl logs -f job/{{ .Release.Name }}-benchmark
+
+To view results:
+  kubectl cp $(kubectl get pod -l job-name={{ .Release.Name }}-benchmark -o jsonpath='{.items[0].metadata.name}'):/app/results ./results

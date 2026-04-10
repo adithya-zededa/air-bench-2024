@@ -1,0 +1,17 @@
+{{- if .Values.benchmark.results.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "air-bench.benchmark.fullname" . }}-results
+  labels:
+    {{- include "air-bench.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.benchmark.results.size }}
+  {{- if .Values.benchmark.results.storageClass }}
+  storageClassName: {{ .Values.benchmark.results.storageClass }}
+  {{- end }}
+{{- end }}

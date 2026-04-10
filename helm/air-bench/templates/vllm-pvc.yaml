@@ -1,0 +1,17 @@
+{{- if .Values.vllm.modelCache.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "air-bench.vllm.fullname" . }}-model-cache
+  labels:
+    {{- include "air-bench.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.vllm.modelCache.size }}
+  {{- if .Values.vllm.modelCache.storageClass }}
+  storageClassName: {{ .Values.vllm.modelCache.storageClass }}
+  {{- end }}
+{{- end }}

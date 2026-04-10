@@ -1,0 +1,50 @@
+# -- vLLM inference server configuration
+vllm:
+  image:
+    repository: ghcr.io/nvidia-ai-iot/vllm
+    tag: latest-jetson-thor
+    pullPolicy: Always
+  model: Kbenkhaled/Qwen3.5-35B-A3B-NVFP4
+  gpuMemoryUtilization: "0.8"
+  extraArgs:
+    - --enable-prefix-caching
+    - --reasoning-parser
+    - qwen3
+    - --enable-auto-tool-choice
+    - --tool-call-parser
+    - qwen3_coder
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      nvidia.com/gpu: 1
+  runtimeClassName: nvidia
+  service:
+    port: 8000
+  # Persistent volume for HuggingFace model cache
+  modelCache:
+    enabled: true
+    size: 100Gi
+    storageClass: ""
+
+# -- Benchmark runner configuration
+benchmark:
+  image:
+    repository: air-bench-2024
+    tag: latest
+    pullPolicy: IfNotPresent
+  sampleNum: 5
+  region: default
+  seed: 42
+  systemPrompt: "You are a helpful assistant."
+  judgeModel: claude-sonnet-4-20250514
+  # Results PVC
+  results:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+
+# -- Anthropic API key (required for judge)
+# Set via --set secrets.anthropicApiKey=YOUR_KEY or in a values override file
+secrets:
+  anthropicApiKey: ""
